@@ -42,9 +42,16 @@ const BIM = {
   rdl:"Rear Delts", rdr:"Rear Delts", fbl:"Forearms", fbr:"Forearms",
 };
 
-function getIds(muscles=[]) {
-  const f=new Set(), b=new Set();
-  muscles.forEach(m=>{ const x=MM[m as keyof typeof MM]; if(x){ x.f.forEach(i=>f.add(i)); x.b.forEach(i=>b.add(i)); } });
+// FULLY TYPED getIds FUNCTION
+function getIds(muscles: string[] = []) {
+  const f = new Set<string>(), b = new Set<string>();
+  muscles.forEach(m => { 
+    const x = MM[m as keyof typeof MM]; 
+    if(x){ 
+      x.f.forEach(i => f.add(i)); 
+      x.b.forEach(i => b.add(i)); 
+    } 
+  });
   return { f:[...f], b:[...b] };
 }
 
