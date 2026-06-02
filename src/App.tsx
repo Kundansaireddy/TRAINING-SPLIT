@@ -44,7 +44,6 @@ interface MuscleDefsProps {
   map: Record<string, string>;
   pri: string[];
   sec: string[];
-  dim: string[];
   anyActive: boolean;
 }
 
@@ -90,7 +89,7 @@ function MuscleDefs({ ids, map, pri, sec, anyActive }: MuscleDefsProps) {
 }
 
 function gF(id: string) { return `url(#mg_${id})`; }
-function gS(id: string, map: Record<string, string>, pri: string[], sec: string[], dim: string[], anyActive: boolean) {
+function gS(id: string, map: Record<string, string>, pri: string[], sec: string[], anyActive: boolean) {
   const base = MC[map[id]] || "#888888";
   if (pri.includes(id)) return base;
   if (sec.includes(id)) return hr(base, 0.45);
@@ -107,20 +106,19 @@ function gW(id: string, pri: string[], sec: string[], anyActive: boolean) {
 interface BodyProps {
   pri?: string[];
   sec?: string[];
-  dim?: string[];
   anyActive?: boolean;
 }
 
-function FrontBody({ pri = [], sec = [], dim = [], anyActive = false }: BodyProps) {
+function FrontBody({ pri = [], sec = [], anyActive = false }: BodyProps) {
   const p = (id: string): React.SVGProps<SVGPathElement> => ({
     fill: gF(id),
-    stroke: gS(id, FIM, pri, sec, dim, anyActive),
+    stroke: gS(id, FIM, pri, sec, anyActive),
     strokeWidth: gW(id, pri, sec, anyActive),
     strokeLinejoin: "round"
   });
   return (
     <svg viewBox="0 0 120 260" style={{ height: 190, width: "auto", display: "block" }}>
-      <MuscleDefs ids={ALL_F} map={FIM} pri={pri} sec={sec} dim={dim} anyActive={anyActive} />
+      <MuscleDefs ids={ALL_F} map={FIM} pri={pri} sec={sec} anyActive={anyActive} />
       <ellipse cx="60" cy="15" rx="11" ry="13" fill="#111" stroke="#222" strokeWidth="0.5" />
       <path d="M52,27 Q48,32 48,38 L72,38 Q72,32 68,27Z" fill="#111" />
       <path d="M27,36 Q10,42 9,60 Q8,78 18,90 Q24,100 28,116 L28,132 L92,132 Q96,116 102,90 Q112,78 111,60 Q110,42 93,36 Q78,30 60,30 Q42,30 27,36Z" fill="#0A0A0A" stroke="#1A1A1A" strokeWidth="0.4" />
@@ -162,16 +160,16 @@ function FrontBody({ pri = [], sec = [], dim = [], anyActive = false }: BodyProp
   );
 }
 
-function BackBody({ pri = [], sec = [], dim = [], anyActive = false }: BodyProps) {
+function BackBody({ pri = [], sec = [], anyActive = false }: BodyProps) {
   const p = (id: string): React.SVGProps<SVGPathElement> => ({
     fill: gF(id),
-    stroke: gS(id, BIM, pri, sec, dim, anyActive),
+    stroke: gS(id, BIM, pri, sec, anyActive),
     strokeWidth: gW(id, pri, sec, anyActive),
     strokeLinejoin: "round"
   });
   return (
     <svg viewBox="0 0 120 260" style={{ height: 190, width: "auto", display: "block" }}>
-      <MuscleDefs ids={ALL_B} map={BIM} pri={pri} sec={sec} dim={dim} anyActive={anyActive} />
+      <MuscleDefs ids={ALL_B} map={BIM} pri={pri} sec={sec} anyActive={anyActive} />
       <ellipse cx="60" cy="15" rx="11" ry="13" fill="#111" stroke="#222" strokeWidth="0.5" />
       <path d="M52,27 Q48,32 48,38 L72,38 Q72,32 68,27Z" fill="#111" />
       <path d="M27,36 Q10,42 9,60 Q8,78 18,90 Q24,100 28,116 L28,132 L92,132 Q96,116 102,90 Q112,78 111,60 Q110,42 93,36 Q78,30 60,30 Q42,30 27,36Z" fill="#0A0A0A" stroke="#1A1A1A" strokeWidth="0.4" />
@@ -353,8 +351,8 @@ export default function App() {
           {activeEx !== null && <div onClick={() => setActiveEx(null)} style={{ marginLeft: "auto", fontSize: 10, color: day.accent, cursor: "pointer", padding: "2px 8px", border: `1px solid ${day.accent}44`, borderRadius: 4 }}>Clear x</div>}
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
-          <FrontBody pri={noSel ? dayIds.f : priIds.f} sec={noSel ? [] : secIds.f} dim={noSel ? [] : dayIds.f} anyActive={!noSel} />
-          <BackBody pri={noSel ? dayIds.b : priIds.b} sec={noSel ? [] : secIds.b} dim={noSel ? [] : dayIds.b} anyActive={!noSel} />
+          <FrontBody pri={noSel ? dayIds.f : priIds.f} sec={noSel ? [] : secIds.f} anyActive={!noSel} />
+          <BackBody pri={noSel ? dayIds.b : priIds.b} sec={noSel ? [] : secIds.b} anyActive={!noSel} />
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10 }}>
           {legend.filter(m => MC[m]).map((m, i) => (
