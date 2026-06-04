@@ -320,23 +320,71 @@ const DAYS = [
 export default function App() {
   const [activeDay, setActiveDay] = useState<number>(0);
   const [activeEx, setActiveEx] = useState<number | null>(null);
+  // NEW: track which muscle group label is selected
+  const [activeMuscle, setActiveMuscle] = useState<string | null>(null);
+
   const day = DAYS[activeDay];
-  const handleDay = (i: number) => { setActiveDay(i); setActiveEx(null); };
-  const handleEx = (i: number) => setActiveEx(activeEx === i ? null : i);
+
+  const handleDay = (i: number) => { setActiveDay(i); setActiveEx(null); setActiveMuscle(null); };
+  const handleEx = (i: number) => {
+    // clicking an exercise clears muscle filter and toggles exercise
+    setActiveMuscle(null);
+    setActiveEx(activeEx === i ? null : i);
+  };
+
+  // clicking a muscle group tag toggles it; also clears exercise selection
+  const handleMuscleClick = (m: string) => {
+    // only allow clicking muscles that belong to today's day
+    if (!dayMuscles.includes(m)) return;
+    setActiveEx(null);
+    setActiveMuscle(activeMuscle === m ? null : m);
+  };
+
   const dayMuscles = [...new Set(day.exercises.flatMap(ex => [ex.primary, ...(ex.secondary || [])]))];
   const dayIds = getIds(dayMuscles);
-  let priIds = { f: [] as string[], b: [] as string[] }, secIds = { f: [] as string[], b: [] as string[] };
-  if (activeEx !== null) { const ex = day.exercises[activeEx]; priIds = getIds([ex.primary]); secIds = getIds(ex.secondary || []); }
-  const noSel = activeEx === null;
-  const legend = activeEx !== null ? [day.exercises[activeEx].primary, ...(day.exercises[activeEx].secondary || [])] : dayMuscles;
+
+  // Determine which exercises to highlight when a muscle label is active
+  // An exercise is highlighted if the selected muscle is its primary OR secondary
+  const muscleHighlightedExIndices: Set<number> = new Set();
+  if (activeMuscle !== null) {
+    day.exercises.forEach((ex, i) => {
+      if (ex.primary === activeMuscle || (ex.secondary || []).includes(activeMuscle)) {
+        muscleHighlightedExIndices.add(i);
+      }
+    });
+  }
+
+  let priIds = { f: [] as string[], b: [] as string[] };
+  let secIds = { f: [] as string[], b: [] as string[] };
+
+  if (activeEx !== null) {
+    const ex = day.exercises[activeEx];
+    priIds = getIds([ex.primary]);
+    secIds = getIds(ex.secondary || []);
+  } else if (activeMuscle !== null) {
+    // highlight the selected muscle group as primary on the body diagram
+    priIds = getIds([activeMuscle]);
+  }
+
+  const anyActive = activeEx !== null || activeMuscle !== null;
+  const noSel = !anyActive;
+
+  // Legend: when muscle active show that muscle; when ex active show its muscles; else show all day muscles
+  const legend = activeEx !== null
+    ? [day.exercises[activeEx].primary, ...(day.exercises[activeEx].secondary || [])]
+    : activeMuscle !== null
+      ? [activeMuscle]
+      : dayMuscles;
 
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#EDEBE6", fontFamily: "Georgia,serif", paddingBottom: 40 }}>
       <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid #181818" }}>
         <div style={{ fontSize: 9, letterSpacing: "0.35em", color: "#444", marginBottom: 5, textTransform: "uppercase" }}>5-Day Training Split · 6 Exercises Per Day</div>
         <div style={{ fontSize: 22, fontWeight: "bold" }}>Your Program</div>
-        <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>Tap any exercise — muscles highlight with gradients · animated movement shown</div>
+        <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>Tap any exercise or muscle group — highlights related muscles &amp; exercises</div>
       </div>
+
+      {/* Day tabs */}
       <div style={{ display: "flex", overflowX: "auto", padding: "10px 16px", gap: 7, borderBottom: "1px solid #181818", scrollbarWidth: "none" }}>
         {DAYS.map((d, i) => (
           <button key={i} onClick={() => handleDay(i)} style={{ flex: "0 0 auto", minWidth: 60, background: activeDay === i ? d.accent : "#0D0D0D", color: activeDay === i ? "#fff" : "#555", border: `1px solid ${activeDay === i ? d.accent : "#1E1E1E"}`, borderRadius: 6, padding: "7px 8px", cursor: "pointer", fontFamily: "inherit", textAlign: "center", transition: "all 0.15s" }}>
@@ -345,36 +393,162 @@ export default function App() {
           </button>
         ))}
       </div>
+
+      {/* Sticky header with body diagram + legend */}
       <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#080808", borderBottom: "1px solid #181818", padding: "12px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: day.accent, flexShrink: 0 }} />
           <div style={{ fontSize: 13, fontWeight: "bold" }}>{day.label}</div>
-          {activeEx !== null && <div onClick={() => setActiveEx(null)} style={{ marginLeft: "auto", fontSize: 10, color: day.accent, cursor: "pointer", padding: "2px 8px", border: `1px solid ${day.accent}44`, borderRadius: 4 }}>Clear x</div>}
+          {(activeEx !== null || activeMuscle !== null) && (
+            <div
+              onClick={() => { setActiveEx(null); setActiveMuscle(null); }}
+              style={{ marginLeft: "auto", fontSize: 10, color: day.accent, cursor: "pointer", padding: "2px 8px", border: `1px solid ${day.accent}44`, borderRadius: 4 }}
+            >
+              Clear ×
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
-          <FrontBody pri={noSel ? dayIds.f : priIds.f} sec={noSel ? [] : secIds.f} anyActive={!noSel} />
-          <BackBody pri={noSel ? dayIds.b : priIds.b} sec={noSel ? [] : secIds.b} anyActive={!noSel} />
+          <FrontBody pri={noSel ? dayIds.f : priIds.f} sec={noSel ? [] : secIds.f} anyActive={anyActive} />
+          <BackBody pri={noSel ? dayIds.b : priIds.b} sec={noSel ? [] : secIds.b} anyActive={anyActive} />
         </div>
+
+        {/* Muscle group legend pills — clickable, with dimming for off-day muscles */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10 }}>
-          {legend.filter(m => MC[m]).map((m, i) => (
-            <div key={i} style={{ background: MC[m] + "20", color: MC[m], fontSize: 9, padding: "2px 8px", borderRadius: 3, fontWeight: activeEx !== null && i === 0 ? "700" : "400", opacity: activeEx !== null && i > 0 ? 0.5 : 1 }}>● {m}</div>
-          ))}
+          {Object.keys(MC).map((m) => {
+            const isInDay = dayMuscles.includes(m);
+            const isSelected = activeMuscle === m;
+            const isInLegend = legend.includes(m);
+            const isPrimary = activeEx !== null && day.exercises[activeEx]?.primary === m;
+
+            // Determine visual state
+            let bg: string, color: string, opacity: number, border: string, cursor: string;
+            if (!isInDay) {
+              // NOT used today → ghosted white, not clickable
+              bg = "rgba(255,255,255,0.04)";
+              color = "rgba(255,255,255,0.18)";
+              opacity = 1;
+              border = "1px solid rgba(255,255,255,0.06)";
+              cursor = "default";
+            } else if (isSelected) {
+              // actively selected muscle
+              bg = MC[m] + "40";
+              color = MC[m];
+              opacity = 1;
+              border = `1px solid ${MC[m]}88`;
+              cursor = "pointer";
+            } else if (activeMuscle !== null && !isSelected) {
+              // another muscle is selected — dim this one
+              bg = MC[m] + "10";
+              color = MC[m] + "55";
+              opacity = 0.5;
+              border = "1px solid transparent";
+              cursor = "pointer";
+            } else if (activeEx !== null && isInLegend) {
+              // exercise is active and this muscle is shown
+              bg = MC[m] + (isPrimary ? "30" : "18");
+              color = MC[m];
+              opacity = isPrimary ? 1 : 0.6;
+              border = isPrimary ? `1px solid ${MC[m]}66` : "1px solid transparent";
+              cursor = "pointer";
+            } else if (activeEx !== null && !isInLegend) {
+              // exercise active but this muscle not involved
+              bg = MC[m] + "0A";
+              color = MC[m] + "44";
+              opacity = 0.4;
+              border = "1px solid transparent";
+              cursor = "pointer";
+            } else {
+              // default: show all day muscles normally
+              bg = MC[m] + "20";
+              color = MC[m];
+              opacity = 1;
+              border = "1px solid transparent";
+              cursor = "pointer";
+            }
+
+            return (
+              <div
+                key={m}
+                onClick={() => isInDay ? handleMuscleClick(m) : undefined}
+                style={{
+                  background: bg,
+                  color,
+                  fontSize: 9,
+                  padding: "2px 8px",
+                  borderRadius: 3,
+                  fontWeight: isPrimary || isSelected ? "700" : "400",
+                  opacity,
+                  border,
+                  cursor,
+                  transition: "all 0.15s",
+                  userSelect: "none",
+                }}
+              >
+                ● {m}
+              </div>
+            );
+          })}
         </div>
-        {activeEx !== null && <div style={{ fontSize: 9, color: "#303030", marginTop: 4 }}>Bright = primary · Faded = secondary</div>}
+
+        {(activeEx !== null || activeMuscle !== null) && (
+          <div style={{ fontSize: 9, color: "#303030", marginTop: 4 }}>
+            {activeEx !== null ? "Bright = primary · Faded = secondary" : `Showing exercises for: ${activeMuscle}`}
+          </div>
+        )}
       </div>
+
       <div style={{ padding: "14px 16px 0" }}>
         <div style={{ fontSize: 11, color: "#585858", lineHeight: 1.75, background: "#0C0C0C", padding: "10px 14px", borderRadius: 6, borderLeft: `3px solid ${day.accent}` }}>{day.note}</div>
       </div>
+
+      {/* Exercise list */}
       <div style={{ padding: "14px 16px 0" }}>
         <div style={{ fontSize: 9, letterSpacing: "0.25em", textTransform: "uppercase", color: "#303030", marginBottom: 10 }}>{day.exercises.length} Exercises</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
           {day.exercises.map((ex, i) => {
-            const isActive = activeEx === i;
+            const isActiveEx = activeEx === i;
+            // Highlighted by muscle filter?
+            const isHighlightedByMuscle = activeMuscle !== null && muscleHighlightedExIndices.has(i);
+            // Dimmed: a muscle filter is on but this exercise isn't in the highlight set
+            const isDimmedByMuscle = activeMuscle !== null && !muscleHighlightedExIndices.has(i);
+
+            let cardBg: string, cardBorder: string, cardOpacity: number;
+            if (isActiveEx) {
+              cardBg = "#131313";
+              cardBorder = `1px solid ${day.accent}55`;
+              cardOpacity = 1;
+            } else if (isHighlightedByMuscle) {
+              cardBg = "#111";
+              cardBorder = `1px solid ${MC[activeMuscle!] || day.accent}55`;
+              cardOpacity = 1;
+            } else if (isDimmedByMuscle) {
+              cardBg = "#0B0B0B";
+              cardBorder = "1px solid #141414";
+              cardOpacity = 0.35;
+            } else {
+              cardBg = "#0B0B0B";
+              cardBorder = "1px solid #191919";
+              cardOpacity = 1;
+            }
+
             return (
-              <div key={i} onClick={() => handleEx(i)} style={{ background: isActive ? "#131313" : "#0B0B0B", borderRadius: 8, border: `1px solid ${isActive ? day.accent + "55" : "#191919"}`, cursor: "pointer", overflow: "hidden", transition: "border-color 0.15s" }}>
+              <div
+                key={i}
+                onClick={() => handleEx(i)}
+                style={{
+                  background: cardBg,
+                  borderRadius: 8,
+                  border: cardBorder,
+                  cursor: "pointer",
+                  overflow: "hidden",
+                  transition: "border-color 0.15s, opacity 0.2s",
+                  opacity: cardOpacity,
+                }}
+              >
                 <div style={{ padding: "11px 12px", display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: isActive ? day.accent + "15" : "#111", borderRadius: 6 }}>
-                    <AnimFigure type={ex.anim} color={isActive ? day.accent : "#555"} />
+                  <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: (isActiveEx || isHighlightedByMuscle) ? day.accent + "15" : "#111", borderRadius: 6 }}>
+                    <AnimFigure type={ex.anim} color={(isActiveEx || isHighlightedByMuscle) ? day.accent : "#555"} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: "600", marginBottom: 5, lineHeight: 1.3 }}>{ex.name}</div>
@@ -386,20 +560,28 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    <div style={{ background: day.accent + "1A", color: day.accent, padding: "4px 9px", borderRadius: 4, fontSize: 11, fontWeight: "bold", whiteSpace: "nowrap" }}>{ex.sets} x {ex.reps}</div>
+                    <div style={{ background: day.accent + "1A", color: day.accent, padding: "4px 9px", borderRadius: 4, fontSize: 11, fontWeight: "bold", whiteSpace: "nowrap" }}>{ex.sets} × {ex.reps}</div>
                   </div>
                 </div>
-                {isActive && (
+                {isActiveEx && (
                   <div style={{ padding: "0 12px 12px 62px", marginTop: -2, fontSize: 12, color: "#686868", lineHeight: 1.7, borderTop: "1px solid #191919", paddingTop: 10 }}>
                     {ex.tip}
                   </div>
                 )}
-              </div>);
+                {/* Show tip for muscle-highlighted exercises too */}
+                {!isActiveEx && isHighlightedByMuscle && (
+                  <div style={{ padding: "0 12px 12px 62px", marginTop: -2, fontSize: 11, color: "#505050", lineHeight: 1.7, borderTop: `1px solid ${MC[activeMuscle!] || "#191919"}22`, paddingTop: 8 }}>
+                    {ex.tip}
+                  </div>
+                )}
+              </div>
+            );
           })}
         </div>
         <div style={{ marginTop: 16, background: "#00C85308", border: "1px solid #00C85320", borderRadius: 8, padding: "11px 14px", fontSize: 11, color: "#00C853", lineHeight: 1.7 }}>
           After every session: 20–30 min walk. Burns 200–300 extra kcal and speeds recovery without taxing your muscles.
         </div>
       </div>
-    </div>);
+    </div>
+  );
 }
