@@ -58,18 +58,19 @@ function MuscleDefs({ ids, map, pri, sec, anyActive }: MuscleDefsProps) {
         if (pri.includes(id)) {
           stops = [
             { o: "0%", c: "#ffffff", a: 1 },
-            { o: "35%", c: base, a: 1 },
-            { o: "100%", c: base, a: 0.85 },
+            { o: "30%", c: base, a: 1 },
+            { o: "100%", c: base, a: 0.9 },
           ];
         } else if (sec.includes(id)) {
           stops = [
-            { o: "0%", c: base, a: 0.55 },
-            { o: "100%", c: base, a: 0.28 },
+            { o: "0%", c: base, a: 0.65 },
+            { o: "100%", c: base, a: 0.35 },
           ];
         } else if (anyActive) {
+          // Keep the color but dim it significantly, avoiding black
           stops = [
-            { o: "0%", c: "#ffffff", a: 0.10 },
-            { o: "100%", c: "#ffffff", a: 0.04 },
+            { o: "0%", c: base, a: 0.35 },
+            { o: "100%", c: base, a: 0.15 },
           ];
         } else {
           stops = [
@@ -94,14 +95,14 @@ function gF(id: string) { return `url(#mg_${id})`; }
 function gS(id: string, map: Record<string, string>, pri: string[], sec: string[], anyActive: boolean) {
   const base = MC[map[id]] || "#888888";
   if (pri.includes(id)) return base;
-  if (sec.includes(id)) return hr(base, 0.45);
-  if (anyActive) return "rgba(255,255,255,0.12)";
+  if (sec.includes(id)) return hr(base, 0.6);
+  if (anyActive) return hr(base, 0.35); // Dimmed stroke for unselected day muscles
   return hr(base, 0.55);
 }
 function gW(id: string, pri: string[], sec: string[], anyActive: boolean) {
   if (pri.includes(id)) return "2.4";
   if (sec.includes(id)) return "1.2";
-  if (anyActive) return "0.6";
+  if (anyActive) return "0.8"; // Slightly thinner when dimmed
   return "1.1";
 }
 
@@ -118,8 +119,8 @@ function FrontBody({ pri = [], sec = [], anyActive = false, dayMuscles = [], onM
     const muscleName = FIM[id];
     const isDayMuscle = dayMuscles.includes(muscleName);
     return {
-      fill: isDayMuscle ? gF(id) : "#FFFFFF",
-      stroke: isDayMuscle ? gS(id, FIM, pri, sec, anyActive) : "#111111",
+      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)", // Translucent white for non-active
+      stroke: isDayMuscle ? gS(id, FIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)", // Subtle white border
       strokeWidth: isDayMuscle ? gW(id, pri, sec, anyActive) : "0.5",
       strokeLinejoin: "round",
       onClick: () => {
@@ -179,8 +180,8 @@ function BackBody({ pri = [], sec = [], anyActive = false, dayMuscles = [], onMu
     const muscleName = BIM[id];
     const isDayMuscle = dayMuscles.includes(muscleName);
     return {
-      fill: isDayMuscle ? gF(id) : "#FFFFFF",
-      stroke: isDayMuscle ? gS(id, BIM, pri, sec, anyActive) : "#111111",
+      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)", // Translucent white for non-active
+      stroke: isDayMuscle ? gS(id, BIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)", // Subtle white border
       strokeWidth: isDayMuscle ? gW(id, pri, sec, anyActive) : "0.5",
       strokeLinejoin: "round",
       onClick: () => {
@@ -234,6 +235,16 @@ function BackBody({ pri = [], sec = [], anyActive = false, dayMuscles = [], onMu
     </svg>
   );
 }
+
+const DumbbellIcon = ({ color }: { color: string }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="7" width="4" height="10" rx="1" />
+    <rect x="18" y="7" width="4" height="10" rx="1" />
+    <rect x="6" y="10" width="12" height="4" />
+    <rect x="0" y="9" width="2" height="6" rx="0.5" />
+    <rect x="22" y="9" width="2" height="6" rx="0.5" />
+  </svg>
+);
 
 const DAYS = [
   {
@@ -409,10 +420,10 @@ export default function App() {
               <div key={i} onClick={() => handleEx(i)} style={{ background: isActive ? "#131313" : "#0B0B0B", borderRadius: 8, border: `1px solid ${isActive ? day.accent + "55" : "#191919"}`, cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
                 <div style={{ padding: "11px 12px", display: "flex", alignItems: "flex-start", gap: 10 }}>
                   
-                  {/* Replaced animation with MuscleWiki Link & Placeholder Image */}
-                  <a href={`https://musclewiki.com/search?q=${encodeURIComponent(ex.name)}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, width: 40, height: 40, display: "block", borderRadius: 6, overflow: 'hidden', background: "#111" }}>
-                     <img src={`https://placehold.co/80x80/222222/ffffff?text=${ex.name.charAt(0)}`} alt={ex.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </a>
+                  {/* Replaced broken image link with static SVG Workout Icon */}
+                  <div style={{ flexShrink: 0, width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, background: isActive ? day.accent + "15" : "#111" }}>
+                     <DumbbellIcon color={isActive ? day.accent : "#555"} />
+                  </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: "600", marginBottom: 5, lineHeight: 1.3, color: isActive ? "#ffffff" : "#EDEBE6" }}>{ex.name}</div>
@@ -445,3 +456,4 @@ export default function App() {
     </div>
   );
 }
+
