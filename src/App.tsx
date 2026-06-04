@@ -7,6 +7,9 @@ const MC: Record<string, string> = {
   Core: "#26C6DA", "Front Delts": "#FFA726", Shoulders: "#FFA726",
   Lats: "#1E88E5", "Upper Back": "#42A5F5", Traps: "#29B6F6",
   "Lower Back": "#8D6E63", "Rear Delts": "#26A69A", Forearms: "#80CBC4",
+  // Sub-muscles for Detailed Views
+  "Upper Chest": "#FF8A80", "Mid Chest": "#EF5350", "Lower Chest": "#C62828",
+  "Traps": "#29B6F6", "Mid Back": "#0288D1", "Lats": "#1E88E5", "Lower Back": "#8D6E63"
 };
 
 const MM: Record<string, { f: string[]; b: string[] }> = {
@@ -67,7 +70,6 @@ function MuscleDefs({ ids, map, pri, sec, anyActive }: MuscleDefsProps) {
             { o: "100%", c: base, a: 0.35 },
           ];
         } else if (anyActive) {
-          // Keep the color but dim it significantly, avoiding black
           stops = [
             { o: "0%", c: base, a: 0.35 },
             { o: "100%", c: base, a: 0.15 },
@@ -96,13 +98,13 @@ function gS(id: string, map: Record<string, string>, pri: string[], sec: string[
   const base = MC[map[id]] || "#888888";
   if (pri.includes(id)) return base;
   if (sec.includes(id)) return hr(base, 0.6);
-  if (anyActive) return hr(base, 0.35); // Dimmed stroke for unselected day muscles
+  if (anyActive) return hr(base, 0.35); 
   return hr(base, 0.55);
 }
 function gW(id: string, pri: string[], sec: string[], anyActive: boolean) {
   if (pri.includes(id)) return "2.4";
   if (sec.includes(id)) return "1.2";
-  if (anyActive) return "0.8"; // Slightly thinner when dimmed
+  if (anyActive) return "0.8"; 
   return "1.1";
 }
 
@@ -119,8 +121,8 @@ function FrontBody({ pri = [], sec = [], anyActive = false, dayMuscles = [], onM
     const muscleName = FIM[id];
     const isDayMuscle = dayMuscles.includes(muscleName);
     return {
-      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)", // Translucent white for non-active
-      stroke: isDayMuscle ? gS(id, FIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)", // Subtle white border
+      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)",
+      stroke: isDayMuscle ? gS(id, FIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)",
       strokeWidth: isDayMuscle ? gW(id, pri, sec, anyActive) : "0.5",
       strokeLinejoin: "round",
       onClick: () => {
@@ -180,8 +182,8 @@ function BackBody({ pri = [], sec = [], anyActive = false, dayMuscles = [], onMu
     const muscleName = BIM[id];
     const isDayMuscle = dayMuscles.includes(muscleName);
     return {
-      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)", // Translucent white for non-active
-      stroke: isDayMuscle ? gS(id, BIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)", // Subtle white border
+      fill: isDayMuscle ? gF(id) : "rgba(255, 255, 255, 0.08)",
+      stroke: isDayMuscle ? gS(id, BIM, pri, sec, anyActive) : "rgba(255, 255, 255, 0.25)",
       strokeWidth: isDayMuscle ? gW(id, pri, sec, anyActive) : "0.5",
       strokeLinejoin: "round",
       onClick: () => {
@@ -304,10 +306,36 @@ const DAYS = [
   },
 ];
 
+// --- NEW: DETAILED DATABASE ---
+const DETAILED_EXERCISES: Record<string, any[]> = {
+  Chest: [
+    { name: "Incline DB Press", sub: "Upper Chest", sets: 3, reps: "8-10", tip: "30-45 degree angle. Focuses heavily on the clavicular head." },
+    { name: "Low-to-High Cable Crossover", sub: "Upper Chest", sets: 3, reps: "12-15", tip: "Bring hands together at eye-level to squeeze the upper pecs." },
+    { name: "Flat Barbell Bench Press", sub: "Mid Chest", sets: 4, reps: "5-8", tip: "Primary mass builder for the sternal head of the pectoralis." },
+    { name: "Pec Deck Machine", sub: "Mid Chest", sets: 3, reps: "12-15", tip: "Isolate the chest without tricep involvement. Squeeze hard." },
+    { name: "High-to-Low Cable Fly", sub: "Lower Chest", sets: 3, reps: "12-15", tip: "Drive hands down toward your hips to hit the costal head." },
+    { name: "Dips (Forward Lean)", sub: "Lower Chest", sets: 3, reps: "8-12", tip: "Lean your torso forward. Keeping upright targets triceps instead." }
+  ],
+  Back: [
+    { name: "Pull-ups / Chin-ups", sub: "Lats", sets: 3, reps: "Failure", tip: "Wide grip for maximum lat sweep and width." },
+    { name: "Straight Arm Pulldown", sub: "Lats", sets: 3, reps: "12-15", tip: "Isolates the lats completely. Keep arms relatively straight." },
+    { name: "Barbell Shrugs", sub: "Traps", sets: 4, reps: "10-12", tip: "Straight up and down motion. Hold for 1 second at the top." },
+    { name: "Seated Cable Row", sub: "Mid Back", sets: 3, reps: "10-12", tip: "Pull to your belly button and squeeze shoulder blades together." },
+    { name: "T-Bar Row", sub: "Mid Back", sets: 3, reps: "8-10", tip: "Thickens the rhomboids and mid-traps." },
+    { name: "45-Degree Hyperextension", sub: "Lower Back", sets: 3, reps: "12-15", tip: "Position hips on the pad. Squeeze the erector spinae and glutes at the top." },
+    { name: "Romanian Deadlift", sub: "Lower Back", sets: 3, reps: "8-10", tip: "Works the entire posterior chain including the lower back." }
+  ],
+  // Add other muscle groups here later (e.g., Shoulders, Quads)
+};
+
 export default function App() {
   const [activeDay, setActiveDay] = useState<number>(0);
   const [activeEx, setActiveEx] = useState<number | null>(null);
   const [activeMuscle, setActiveMuscle] = useState<string | null>(null);
+  
+  // New state for detailed view
+  const [detailedViewMuscle, setDetailedViewMuscle] = useState<string | null>(null);
+  const [activeSubMuscle, setActiveSubMuscle] = useState<string | null>(null);
 
   const day = DAYS[activeDay];
 
@@ -323,8 +351,15 @@ export default function App() {
   };
 
   const handleMuscleClick = (m: string) => {
-    setActiveMuscle(activeMuscle === m ? null : m);
-    setActiveEx(null);
+    // If the muscle exists in our detailed database, open the modal
+    if (DETAILED_EXERCISES[m]) {
+      setDetailedViewMuscle(m);
+      setActiveSubMuscle(null); // Reset sub-muscle selection
+    } else {
+      // Otherwise, highlight standard exercises in the list
+      setActiveMuscle(activeMuscle === m ? null : m);
+      setActiveEx(null);
+    }
   };
 
   const dayMuscles = [...new Set(day.exercises.flatMap(ex => [ex.primary, ...(ex.secondary || [])]))];
@@ -355,12 +390,136 @@ export default function App() {
     legend = dayMuscles;
   }
 
+  // --- DETAILED VIEW MODAL COMPONENT ---
+  const renderDetailedModal = () => {
+    if (!detailedViewMuscle) return null;
+
+    const detailedExercises = DETAILED_EXERCISES[detailedViewMuscle] || [];
+    const subMuscles = [...new Set(detailedExercises.map(ex => ex.sub))];
+
+    return (
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#080808", zIndex: 100, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        
+        {/* Modal Header */}
+        <div style={{ padding: "20px 16px", borderBottom: "1px solid #181818", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#080808", zIndex: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, letterSpacing: "0.2em", color: "#666", textTransform: "uppercase" }}>Anatomy Breakdown</div>
+            <div style={{ fontSize: 24, fontWeight: "bold", color: MC[detailedViewMuscle] || "#fff" }}>{detailedViewMuscle}</div>
+          </div>
+          <button onClick={() => setDetailedViewMuscle(null)} style={{ background: "#1A1A1A", border: "none", color: "#fff", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: "bold" }}>
+            Close
+          </button>
+        </div>
+
+        {/* Custom SVG Anatomy Graphic */}
+        <div style={{ padding: "20px", display: "flex", justifyContent: "center", borderBottom: "1px solid #181818" }}>
+          <svg viewBox="0 0 100 100" style={{ width: 180, height: 180 }}>
+            {detailedViewMuscle === "Chest" && (
+              <g stroke="#111" strokeWidth="1" strokeLinejoin="round">
+                {/* Upper Chest */}
+                <path 
+                  d="M20,30 Q50,35 80,30 Q70,45 50,45 Q30,45 20,30Z" 
+                  fill={activeSubMuscle === "Upper Chest" || !activeSubMuscle ? MC["Upper Chest"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Upper Chest" ? null : "Upper Chest")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+                {/* Mid Chest */}
+                <path 
+                  d="M18,34 Q50,48 82,34 Q80,60 50,65 Q20,60 18,34Z" 
+                  fill={activeSubMuscle === "Mid Chest" || !activeSubMuscle ? MC["Mid Chest"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Mid Chest" ? null : "Mid Chest")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+                {/* Lower Chest */}
+                <path 
+                  d="M25,58 Q50,68 75,58 Q65,80 50,75 Q35,80 25,58Z" 
+                  fill={activeSubMuscle === "Lower Chest" || !activeSubMuscle ? MC["Lower Chest"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Lower Chest" ? null : "Lower Chest")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+              </g>
+            )}
+            
+            {detailedViewMuscle === "Back" && (
+              <g stroke="#111" strokeWidth="1" strokeLinejoin="round">
+                {/* Traps */}
+                <path 
+                  d="M50,5 L30,25 L50,45 L70,25 Z" 
+                  fill={activeSubMuscle === "Traps" || !activeSubMuscle ? MC["Traps"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Traps" ? null : "Traps")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+                {/* Mid Back (Rhomboids) */}
+                <path 
+                  d="M35,35 L50,48 L65,35 L50,65 Z" 
+                  fill={activeSubMuscle === "Mid Back" || !activeSubMuscle ? MC["Mid Back"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Mid Back" ? null : "Mid Back")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+                {/* Lats */}
+                <path 
+                  d="M25,35 Q10,60 35,80 L50,60 L35,35Z M75,35 Q90,60 65,80 L50,60 L75,35Z" 
+                  fill={activeSubMuscle === "Lats" || !activeSubMuscle ? MC["Lats"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Lats" ? null : "Lats")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+                {/* Lower Back (Erectors) */}
+                <path 
+                  d="M40,60 L50,68 L60,60 L60,95 L40,95 Z" 
+                  fill={activeSubMuscle === "Lower Back" || !activeSubMuscle ? MC["Lower Back"] : "rgba(255,255,255,0.08)"}
+                  onClick={() => setActiveSubMuscle(activeSubMuscle === "Lower Back" ? null : "Lower Back")}
+                  style={{ cursor: "pointer", transition: "fill 0.2s" }}
+                />
+              </g>
+            )}
+          </svg>
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, padding: "12px 16px" }}>
+          {subMuscles.map(sm => (
+            <div 
+              key={sm} 
+              onClick={() => setActiveSubMuscle(activeSubMuscle === sm ? null : sm)}
+              style={{ background: (MC[sm] || "#555") + "20", color: MC[sm] || "#fff", fontSize: 10, padding: "4px 10px", borderRadius: 4, cursor: "pointer", fontWeight: "bold", border: activeSubMuscle === sm ? `1px solid ${MC[sm]}` : "1px solid transparent", opacity: activeSubMuscle && activeSubMuscle !== sm ? 0.4 : 1 }}
+            >
+              {sm}
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: "center", fontSize: 10, color: "#555", marginBottom: 10 }}>Tap a muscle region to isolate exercises</div>
+
+        {/* Detailed Exercise List */}
+        <div style={{ padding: "0 16px 30px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {detailedExercises.map((ex, i) => {
+            const isTargeted = activeSubMuscle === null || activeSubMuscle === ex.sub;
+            if (!isTargeted) return null; // Hide non-relevant exercises for cleaner UI
+
+            return (
+              <div key={i} style={{ background: "#111", borderRadius: 8, border: `1px solid ${MC[ex.sub] + "44"}`, padding: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                  <div style={{ fontSize: 14, fontWeight: "bold", color: "#fff" }}>{ex.name}</div>
+                  <div style={{ fontSize: 10, color: MC[ex.sub], border: `1px solid ${MC[ex.sub]}44`, padding: "2px 6px", borderRadius: 4 }}>{ex.sets} x {ex.reps}</div>
+                </div>
+                <div style={{ fontSize: 11, color: MC[ex.sub], fontWeight: "bold", marginBottom: 6 }}>Target: {ex.sub}</div>
+                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{ex.tip}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#EDEBE6", fontFamily: "Georgia,serif", paddingBottom: 40 }}>
+      {/* Detailed Modal Overlay */}
+      {renderDetailedModal()}
+
       <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid #181818" }}>
         <div style={{ fontSize: 9, letterSpacing: "0.35em", color: "#444", marginBottom: 5, textTransform: "uppercase" }}>5-Day Training Split · 6 Exercises Per Day</div>
         <div style={{ fontSize: 22, fontWeight: "bold" }}>Your Program</div>
-        <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>Tap an exercise or a muscle to highlight correlations</div>
+        <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>Tap an exercise or a muscle to highlight correlations. Tap Chest or Back for anatomy deep-dive.</div>
       </div>
       
       <div style={{ display: "flex", overflowX: "auto", padding: "10px 16px", gap: 7, borderBottom: "1px solid #181818", scrollbarWidth: "none" }}>
@@ -420,7 +579,6 @@ export default function App() {
               <div key={i} onClick={() => handleEx(i)} style={{ background: isActive ? "#131313" : "#0B0B0B", borderRadius: 8, border: `1px solid ${isActive ? day.accent + "55" : "#191919"}`, cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
                 <div style={{ padding: "11px 12px", display: "flex", alignItems: "flex-start", gap: 10 }}>
                   
-                  {/* Replaced broken image link with static SVG Workout Icon */}
                   <div style={{ flexShrink: 0, width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, background: isActive ? day.accent + "15" : "#111" }}>
                      <DumbbellIcon color={isActive ? day.accent : "#555"} />
                   </div>
@@ -456,4 +614,3 @@ export default function App() {
     </div>
   );
 }
-
